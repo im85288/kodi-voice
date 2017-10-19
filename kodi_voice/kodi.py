@@ -1504,6 +1504,25 @@ class Kodi:
         answer.append({'title': d['title'], 'episodeid': d['episodeid'], 'show': d['showtitle'], 'label': d['label'], 'dateadded': datetime.datetime.strptime(d['dateadded'], "%Y-%m-%d %H:%M:%S")})
     return answer
 
+  def GetPVRChannels(self):
+    data = self.SendCommand(RPCString("PVR.GetChannels", {"channelgroupid": "alltv"}))
+    # Add in a cleaned up label to improve matching
+    if 'result' in data and 'channels' in data['result']:
+      for channel in data['result']['channels']:
+        channel['sanitized_label'] = sanitize_channel(channel['label'], self.language)
+    return data
+
+  def GetPVRBroadcasts(self, channelid):
+    data = self.SendCommand(RPCString("PVR.GetBroadcasts", {"channelid": int(channelid), "properties" : ["starttime", "endtime", "progresspercentage", "isactive"]}))
+    # broadcastid isn't very useful so add the channelid to each broadcast
+    if 'result' in data and 'broadcasts' in data['result']:
+      for broadcast in data['result']['broadcasts']:
+        broadcast['channelid'] = channelid
+    return data
+
+  def WatchPVRChannel(self, channelid):
+    return self.SendCommand(RPCString("Player.Open", {"item": {"channelid": int(channelid)}}))
+
 
   # System commands
 
