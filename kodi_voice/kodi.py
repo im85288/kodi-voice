@@ -465,6 +465,8 @@ class Kodi:
     return located[:limit]
 
 
+
+
   def FindVideoPlaylist(self, heard_search):
     log.info('Searching for video playlist "%s"', heard_search.encode("utf-8"))
 
@@ -622,6 +624,45 @@ class Kodi:
           located = [(item['addonid'], item['name']) for item in ll]
 
     return located
+
+  def FindPVRChannel(self, heard_search):
+    print 'Searching for channel "%s"' % (heard_search.encode("utf-8"))
+
+    channels = self.GetPVRChannels()
+    if 'result' in channels and 'channels' in channels['result']:
+      channel_list = channels['result']['channels']
+      located = self.matchHeard(heard_search, channel_list, 'sanitized_label')
+
+      if located:
+        print 'Located channel "%s"' % (heard_search.encode("utf-8"))
+        return located['channelid'], located['label']
+
+    return None, None
+
+  def FindPVRBroadcast(self, heard_search):
+    print 'Searching for channel "%s"' % (sanitize_name(heard_search))
+
+    # Put together a list of all broadcasts
+    channels = self.GetPVRChannels()
+    if 'result' in channels and 'channels' in channels['result']:
+      channel_list = channels['result']['channels']
+      broadcast_list = []
+      for channel in channel_list:
+        channel_broadcasts = self.GetPVRBroadcasts(channel['channelid'])
+        if 'result' in channel_broadcasts and 'broadcasts' in channel_broadcasts['result']:
+          broadcast_list.extend(channel_broadcasts['result']['broadcasts'])
+
+    # Filter to current broadcasts and sort by progress, so that we switch to the one with the most remaining
+    if broadcast_list:
+      current_broadcasts = sorted([x for x in broadcast_list if x['isactive'] == True], key=lambda k: k['progresspercentage'])
+      located = self.matchHeard(heard_search, current_broadcasts, 'label')
+
+      if located:
+        print 'Located broadcast "%s"' % (sanitize_name(located['label']))
+        channel = next((item for item in channel_list if item['channelid'] == located['channelid']), None)
+        return located['broadcastid'], located['label'], channel['channelid'], channel['label']
+
+    return None, None, None, None
 
 
   # Playlists
