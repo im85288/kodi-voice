@@ -67,6 +67,16 @@ def sanitize_name(media_name, normalize=True):
   name = name.strip()
   return name
 
+def sanitize_channel(name, lang='en'):
+  name = name.lower()
+  name = name.replace("+", " plus ")
+  name = re.sub(r"\sch\s", " channel ", name)
+  name = re.sub("^channel", "", name)
+  name = re.sub(r"(?<=\D)(?=\d)|(?<=\d)(?=\D)", " ", name)
+  name = words2digits(name, lang=lang)
+  return name
+
+
 
 # Remove extra slashes
 def http_normalize_slashes(url):
